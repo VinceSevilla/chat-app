@@ -15,11 +15,14 @@ export const Sidebar: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const filteredChats = chats.filter(chat => {
-    if (!searchQuery) return true;
-    const chatName = getChatName(chat);
-    return chatName.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const getChatName = (chat: Chat): string => {
     if (chat.name) return chat.name;
@@ -41,14 +44,11 @@ export const Sidebar: React.FC = () => {
     return chat.name?.[0]?.toUpperCase() || '#';
   };
 
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const filteredChats = chats.filter(chat => {
+    if (!searchQuery) return true;
+    const chatName = getChatName(chat);
+    return chatName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const isOnline = (chat: Chat): boolean => {
     if (!chat.is_group && chat.members) {
@@ -213,15 +213,6 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ users, onClose, onCreate })
   const handleCreate = () => {
     if (selectedUsers.length === 0) return;
     onCreate(isGroup, selectedUsers, isGroup ? groupName : undefined);
-  };
-
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (

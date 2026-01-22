@@ -24,7 +24,9 @@ export const ChatPanel: React.FC = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSummary, setShowSummary] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const currentChat = chats.find(c => c.id === currentChatId);
   const currentMessages = currentChatId ? messages[currentChatId] || [] : [];
@@ -191,8 +193,8 @@ export const ChatPanel: React.FC = () => {
 
       {/* Search Bar */}
       {showSearch && (
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <div className="flex gap-2">
+        <div className="border-b border-gray-200 bg-gray-50">
+          <div className="p-4 flex gap-2">
             <input
               type="text"
               value={searchQuery}
@@ -208,9 +210,44 @@ export const ChatPanel: React.FC = () => {
               Search
             </button>
           </div>
+          
+          {/* Search Results */}
           {searchResults.length > 0 && (
-            <div className="mt-2 text-sm text-gray-600">
-              Found {searchResults.length} result(s)
+            <div className="px-4 pb-4 max-h-64 overflow-y-auto border-t border-gray-200">
+              <div className="text-sm font-semibold text-gray-700 mb-2">
+                Found {searchResults.length} result(s)
+              </div>
+              <div className="space-y-2">
+                {searchResults.map((result) => (
+                  <button
+                    key={result.id}
+                    onClick={() => {
+                      setHighlightedMessageId(result.id);
+                      setTimeout(() => {
+                        messageRefs.current[result.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 100);
+                      setTimeout(() => {
+                        setHighlightedMessageId(null);
+                      }, 2000);
+                    }}
+                    className="w-full text-left p-2 hover:bg-gray-100 rounded transition-colors border border-gray-200"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-900 font-medium truncate">
+                          {result.sender?.full_name || 'Unknown'}
+                        </p>
+                        <p className="text-xs text-gray-600 truncate">
+                          {result.content}
+                        </p>
+                      </div>
+                      <div className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                        {formatMessageTime(result.created_at)}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -254,7 +291,14 @@ export const ChatPanel: React.FC = () => {
               return (
                 <div
                   key={message.id || message.tempId}
-                  className={`flex items-start gap-2 mb-4 ${isOwn ? 'flex-row-reverse' : ''}`}
+                  ref={(el) => {
+                    if (el && message.id) {
+                      messageRefs.current[message.id] = el;
+                    }
+                  }}
+                  className={`flex items-start gap-2 mb-4 p-2 rounded transition-colors ${isOwn ? 'flex-row-reverse' : ''} ${
+                    highlightedMessageId === message.id ? 'bg-yellow-100' : ''
+                  }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-semibold text-xs flex-shrink-0">
                     {getInitials(sender?.full_name || 'U')}
