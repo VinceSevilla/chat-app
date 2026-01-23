@@ -25,6 +25,7 @@ interface ChatState {
   error: string | null;
   searchResults: Message[];
   chatSummary: string | null;
+  summaryError: string | null;
   setCurrentChat: (chatId: string | null) => void;
   fetchChats: () => Promise<void>;
   fetchUsers: () => Promise<void>;
@@ -145,6 +146,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   searchResults: [],
   chatSummary: null,
+  summaryError: null,
 
   setupSocketListeners: () => {
     // New message
@@ -240,17 +242,64 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
     });
 
+    // Message delivery status
+    socketService.onMessageDelivered((data: { messageId: string; userId: string }) => {
+      const { messages } = get();
+      
+      Object.keys(messages).forEach(chatId => {
+        const chatMessages = messages[chatId].map((msg: Message) => {
+          if (msg.id === data.messageId) {
+            const deliveredTo = (msg as any).delivered_to || [];
+            if (!deliveredTo.includes(data.userId)) {
+              return { ...msg, delivered_to: [...deliveredTo, data.userId], status: 'delivered' };
+            }
+          }
+          return msg;
+        });
+        
+        set({ messages: { ...messages, [chatId]: chatMessages } });
+      });
+    });
+
+    // Message seen status
+    socketService.onMessagesSeen((data: { messageIds: string[]; userId: string }) => {
+      const { messages } = get();
+      
+      Object.keys(messages).forEach(chatId => {
+        const chatMessages = messages[chatId].map((msg: Message) => {
+          if (data.messageIds.includes(msg.id)) {
+            const readBy = msg.read_by || [];
+            if (!readBy.includes(data.userId)) {
+              return { ...msg, read_by: [...readBy, data.userId], status: 'seen' };
+            }
+          }
+          return msg;
+        });
+        
+        set({ messages: { ...messages, [chatId]: chatMessages } });
+      });
+    });
+
     // New chat
     socketService.onNewChat((chat: Chat) => {
       const { chats } = get();
-      set({ chats: [...chats, chat] });
-      socketService.fetchMessages(chat.id);
+      // Check if chat already exists
+      if (!chats.some(c => c.id === chat.id)) {
+        set({ chats: [...chats, chat] });
+        socketService.fetchMessages(chat.id);
+      }
     });
 
     socketService.onChatCreated((chat: Chat) => {
       const { chats } = get();
-      set({ chats: [...chats, chat], currentChatId: chat.id });
-      socketService.fetchMessages(chat.id);
+      // Check if chat already exists
+      if (!chats.some(c => c.id === chat.id)) {
+        set({ chats: [...chats, chat], currentChatId: chat.id });
+        socketService.fetchMessages(chat.id);
+      } else {
+        // Just set it as current if it exists
+        set({ currentChatId: chat.id });
+      }
     });
 
     // User status
@@ -265,7 +314,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     // Chat summary
     socketService.onChatSummary((data: { chatId: string; summary: string }) => {
-      set({ chatSummary: data.summary });
+      set({ chatSummary: data.summary, summaryError: null });
+    });
+
+    // Chat summary error
+    socketService.onChatSummaryError((data: { error: string }) => {
+      set({ chatSummary: null, summaryError: data.error });
     });
   },
 
@@ -345,6 +399,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   markMessageAsRead: (chatId: string, messageId: string) => {
     socketService.markMessageAsRead(chatId, messageId);
+  },
+
+  markMessageDelivered: (chatId: string, messageId: string) => {
+    socketService.markMessageDelivered(chatId, messageId);
+  },
+
+  markMessagesAsSeen: (chatId: string, messageIds: string[]) => {
+    socketService.markMessagesAsSeen(chatId, messageIds);
   },
 
   searchMessages: (query: string) => {

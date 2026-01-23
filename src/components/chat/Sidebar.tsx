@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore, useChatStore } from '../../store';
-import { Chat } from '../../types';
+import type { Chat } from '../../types';
 import { formatDistanceToNow } from '../../utils/date';
 
 export const Sidebar: React.FC = () => {
@@ -198,6 +198,15 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ users, onClose, onCreate })
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [groupName, setGroupName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const filteredUsers = users.filter(user =>
     user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||

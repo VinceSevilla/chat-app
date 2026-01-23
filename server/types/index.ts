@@ -33,6 +33,8 @@ export interface Message {
   is_flagged: boolean;
   is_blocked: boolean;
   created_at: string;
+  status: 'sent' | 'delivered' | 'seen';
+  delivered_to?: string[];
   read_by?: string[];
 }
 
@@ -66,4 +68,11 @@ export interface MessageData {
 export interface ReadReceiptData {
   chatId: string;
   messageId: string;
+}
+
+export interface MessageStatusData {
+  chatId: string;
+  messageId: string;
+  userId: string;
+  status: 'delivered' | 'seen';
 }

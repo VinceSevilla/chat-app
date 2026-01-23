@@ -15,6 +15,7 @@ export const ChatPanel: React.FC = () => {
     stopTyping,
     requestChatSummary,
     chatSummary,
+    summaryError,
     searchMessages,
     searchResults,
   } = useChatStore();
@@ -25,8 +26,11 @@ export const ChatPanel: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSummary, setShowSummary] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const markedAsSeenRef = useRef<Set<string>>(new Set());
+  const deliveredMessagesRef = useRef<Set<string>>(new Set());
 
   const currentChat = chats.find(c => c.id === currentChatId);
   const currentMessages = currentChatId ? messages[currentChatId] || [] : [];
@@ -34,7 +38,84 @@ export const ChatPanel: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
+    markMessagesAsSeen();
   }, [currentMessages]);
+
+  useEffect(() => {
+    if (chatSummary) {
+      setSummaryLoading(false);
+    }
+  }, [chatSummary]);
+
+  useEffect(() => {
+    // Mark messages as delivered when chat is opened or new messages arrive
+    if (currentChatId && currentMessages.length > 0) {
+      currentMessages.forEach(msg => {
+        if (msg.sender_id !== user?.id && 
+            !msg.id.startsWith('temp-') && 
+            !deliveredMessagesRef.current.has(msg.id)) {
+          useChatStore.getState().markMessageDelivered(currentChatId, msg.id);
+          deliveredMessagesRef.current.add(msg.id);
+        }
+      });
+    }
+  }, [currentChatId, currentMessages.length]);
+
+  const markMessagesAsSeen = () => {
+    if (!currentChatId || !user) return;
+
+    const unseenMessages = currentMessages.filter(msg => 
+      msg.sender_id !== user.id && 
+      !msg.id.startsWith('temp-') &&
+      !markedAsSeenRef.current.has(msg.id)
+    );
+
+    if (unseenMessages.length > 0) {
+      const messageIds = unseenMessages.map(m => m.id);
+      useChatStore.getState().markMessagesAsSeen(currentChatId, messageIds);
+      
+      // Track that we've marked these as seen
+      unseenMessages.forEach(msg => markedAsSeenRef.current.add(msg.id));
+    }
+  };
+
+  const getMessageStatus = (message: Message) => {
+    if (message.sender_id !== user?.id) return null; // Only show status for own messages
+    
+    const otherMembers = currentChat?.members?.filter(m => m.id !== user?.id) || [];
+    const readBy = message.read_by || [];
+    const deliveredTo = (message as any).delivered_to || [];
+    
+    // Check if all other members have read it
+    const allRead = otherMembers.length > 0 && 
+      otherMembers.every(member => readBy.includes(member.id));
+    
+    // Check if delivered to at least one other member
+    const isDelivered = otherMembers.some(member => deliveredTo.includes(member.id));
+    
+    if (allRead) {
+      return (
+        <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+          <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M11 2a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0V6h-1a1 1 0 110-2h1V3a1 1 0 011-1z" clipRule="evenodd" />
+        </svg>
+      );
+    } else if (isDelivered) {
+      return (
+        <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M14.707 7.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414l6-6a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      );
+    } else {
+      return (
+        <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -111,6 +192,7 @@ export const ChatPanel: React.FC = () => {
 
   const handleRequestSummary = () => {
     if (currentChatId) {
+      setSummaryLoading(true);
       requestChatSummary(currentChatId);
       setShowSummary(true);
     }
@@ -254,13 +336,16 @@ export const ChatPanel: React.FC = () => {
       )}
 
       {/* Summary Modal */}
-      {showSummary && chatSummary && (
+      {showSummary && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-gray-900">Chat Summary</h3>
               <button
-                onClick={() => setShowSummary(false)}
+                onClick={() => {
+                  setShowSummary(false);
+                  setSummaryLoading(false);
+                }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,9 +353,38 @@ export const ChatPanel: React.FC = () => {
                 </svg>
               </button>
             </div>
-            <div className="prose max-w-none">
-              <p className="text-gray-700">{chatSummary}</p>
-            </div>
+            
+            {summaryLoading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-600">Generating summary...</p>
+                <p className="text-xs text-gray-500 mt-2">This may take a moment</p>
+              </div>
+            ) : chatSummary ? (
+              <div className="prose max-w-none">
+                <p className="text-gray-700">{chatSummary}</p>
+              </div>
+            ) : summaryError ? (
+              <div className="py-8 text-center text-red-600">
+                <svg className="w-12 h-12 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="font-semibold">{summaryError}</p>
+                <p className="text-xs text-gray-600 mt-2">
+                  <a href="https://platform.openai.com/account/billing/overview" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    Check your OpenAI billing
+                  </a>
+                </p>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-500">
+                <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p>Failed to generate summary</p>
+                <p className="text-xs mt-2">Please try again later</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -326,9 +440,12 @@ export const ChatPanel: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <span className={`text-xs text-gray-500 mt-1 px-3`}>
-                      {formatMessageTime(message.created_at)}
-                    </span>
+                    <div className="flex items-center gap-1 mt-1 px-3">
+                      <span className={`text-xs text-gray-500`}>
+                        {formatMessageTime(message.created_at)}
+                      </span>
+                      {isOwn && getMessageStatus(message)}
+                    </div>
                   </div>
                 </div>
               );

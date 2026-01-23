@@ -153,6 +153,45 @@ export const setupSocketHandlers = (io: Server) => {
       }
     });
 
+    // Handle message delivered status
+    socket.on('message:delivered', async (data: { messageId: string; chatId: string }) => {
+      try {
+        const { messageId, chatId } = data;
+        
+        await supabaseService.markMessageDelivered(messageId, userId);
+
+        // Notify sender
+        socket.to(`chat:${chatId}`).emit('message:delivered', {
+          messageId,
+          userId,
+        });
+      } catch (error) {
+        console.error('Error handling delivered status:', error);
+      }
+    });
+
+    // Handle message seen status
+    socket.on('message:seen', async (data: { messageIds: string[]; chatId: string }) => {
+      try {
+        const { messageIds, chatId } = data;
+        
+        // Mark all messages as read
+        for (const messageId of messageIds) {
+          await supabaseService.updateMessageReadBy(messageId, userId);
+        }
+        
+        await supabaseService.updateLastReadAt(chatId, userId);
+
+        // Notify sender
+        socket.to(`chat:${chatId}`).emit('messages:seen', {
+          messageIds,
+          userId,
+        });
+      } catch (error) {
+        console.error('Error handling seen status:', error);
+      }
+    });
+
     // Handle creating new chats
     socket.on('chat:create', async (data: { isGroup: boolean; name?: string; memberIds: string[] }) => {
       try {
@@ -228,19 +267,31 @@ export const setupSocketHandlers = (io: Server) => {
     // Handle chat summary request
     socket.on('chat:summary', async (data: { chatId: string }) => {
       try {
-        const messages = await supabaseService.getChatMessages(data.chatId, 50);
+        // Get only unread messages for the current user
+        const unreadMessages = await supabaseService.getUnreadMessages(data.chatId, userId);
         
-        const formattedMessages = messages.map(msg => ({
+        // If no unread messages, fall back to recent messages
+        let messagesToSummarize = unreadMessages;
+        if (unreadMessages.length === 0) {
+          const allMessages = await supabaseService.getChatMessages(data.chatId, 50);
+          messagesToSummarize = allMessages;
+        }
+        
+        const formattedMessages = messagesToSummarize.map(msg => ({
           sender_name: msg.sender.full_name,
           content: msg.content,
         }));
 
         const summary = await moderationService.generateChatSummary(formattedMessages);
         
-        socket.emit('chat:summary', { chatId: data.chatId, summary });
+        if (summary) {
+          socket.emit('chat:summary', { chatId: data.chatId, summary });
+        } else {
+          socket.emit('chat:summary:error', { error: 'Unable to generate summary. Please try again.' });
+        }
       } catch (error) {
         console.error('Error generating summary:', error);
-        socket.emit('chat:summary:error', { error: 'Failed to generate summary' });
+        socket.emit('chat:summary:error', { error: 'Failed to generate summary. Please try again later.' });
       }
     });
 

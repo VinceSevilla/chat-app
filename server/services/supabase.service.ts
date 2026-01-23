@@ -224,6 +224,63 @@ export class SupabaseService {
     return data;
   }
 
+  async markMessageDelivered(messageId: string, userId: string) {
+    const { data: message, error: fetchError } = await supabase
+      .from('messages')
+      .select('delivered_to')
+      .eq('id', messageId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const deliveredTo = message.delivered_to || [];
+    if (!deliveredTo.includes(userId)) {
+      deliveredTo.push(userId);
+    }
+
+    const { data, error } = await supabase
+      .from('messages')
+      .update({ delivered_to: deliveredTo })
+      .eq('id', messageId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getUnreadMessages(chatId: string, userId: string) {
+    const { data: member, error: memberError } = await supabase
+      .from('chat_members')
+      .select('last_read_at')
+      .eq('chat_id', chatId)
+      .eq('user_id', userId)
+      .single();
+
+    if (memberError) throw memberError;
+
+    const lastReadAt = member.last_read_at || '1970-01-01T00:00:00Z';
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:users!messages_sender_id_fkey (
+          id,
+          email,
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('chat_id', chatId)
+      .gt('created_at', lastReadAt)
+      .neq('sender_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  }
+
   async updateLastReadAt(chatId: string, userId: string) {
     const { data, error } = await supabase
       .from('chat_members')

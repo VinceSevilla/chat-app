@@ -97,6 +97,23 @@ class SocketService {
     this.socket?.on('message:read', callback);
   }
 
+  // Message delivery and seen
+  markMessageDelivered(chatId: string, messageId: string) {
+    this.socket?.emit('message:delivered', { chatId, messageId });
+  }
+
+  markMessagesAsSeen(chatId: string, messageIds: string[]) {
+    this.socket?.emit('message:seen', { chatId, messageIds });
+  }
+
+  onMessageDelivered(callback: (data: { messageId: string; userId: string }) => void) {
+    this.socket?.on('message:delivered', callback);
+  }
+
+  onMessagesSeen(callback: (data: { messageIds: string[]; userId: string }) => void) {
+    this.socket?.on('messages:seen', callback);
+  }
+
   // Chat events
   createChat(isGroup: boolean, memberIds: string[], name?: string) {
     this.socket?.emit('chat:create', { isGroup, memberIds, name });
