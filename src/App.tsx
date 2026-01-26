@@ -9,10 +9,39 @@ function App() {
   const { user, loading, initAuth } = useAuthStore();
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-
+  const [darkMode, setDarkMode] = useState(() => {
+    // Check if user has saved preference
+    const saved = localStorage.getItem('darkMode');
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+    // Check system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return true;
+    }
+    return false;
+  });
   useEffect(() => {
     initAuth();
   }, []);
+
+  // Handle dark mode toggle
+  const handleDarkModeToggle = () => {
+    setDarkMode(prev => !prev);
+  };
+
+  useEffect(() => {
+    // Sync localStorage with state
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    
+    // Update document class immediately
+    const html = document.documentElement;
+    if (darkMode) {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   if (loading) {
     return (
@@ -71,8 +100,8 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex bg-gray-100">
-      <Sidebar />
+    <div className="h-screen flex bg-gray-100 dark:bg-gray-900">
+      <Sidebar darkMode={darkMode} onToggleDarkMode={handleDarkModeToggle} />
       <ChatPanel />
     </div>
   );
