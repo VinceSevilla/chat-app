@@ -1,23 +1,10 @@
-console.log('=== SERVER STARTING ===');
-
 import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
-console.log('Imports loaded');
-
-dotenv.config();
-
-console.log('Environment loaded, PORT:', process.env.PORT);
-
-try {
-  const { setupSocketHandlers } = await import('./socket/handlers.js');
-  const { SupabaseService } = await import('./services/supabase.service.js');
-
-  console.log('Services imported successfully');
-
+import { setupSocketHandlers } from './socket/handlers.js';
+import { SupabaseService } from './services/supabase.service.js';
 
 dotenv.config();
 
@@ -114,8 +101,3 @@ setupSocketHandlers(io);
     console.log(`Server running on port ${PORT}`);
     console.log(`Socket.IO server ready`);
   });
-} catch (error) {
-  console.error('=== FATAL ERROR ===');
-  console.error(error);
-  process.exit(1);
-}
