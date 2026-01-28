@@ -113,6 +113,12 @@ app.get('/api/chats/:userId', async (req: Request, res: Response) => {
 // Setup Socket.IO handlers
 setupSocketHandlers(io);
 
+// Catch-all for unhandled routes (debugging)
+app.use((req: Request, res: Response) => {
+  console.log(`Unhandled request: ${req.method} ${req.path}`);
+  res.status(404).json({ error: 'Not found' });
+});
+
   const PORT = parseInt(process.env.PORT || '3001', 10);
 
   console.log(`Attempting to start server on port ${PORT}`);
