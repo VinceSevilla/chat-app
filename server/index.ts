@@ -44,15 +44,12 @@ const corsOptions = {
 };
 
 const io = new Server(httpServer, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
+  cors: corsOptions,
 });
 
 // Middleware
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight
 app.use(express.json());
 
 const supabaseService = new SupabaseService();
