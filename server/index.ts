@@ -1,17 +1,23 @@
+console.log('=== SERVER STARTING ===');
+
 import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-console.log('=== SERVER STARTING ===');
+console.log('Imports loaded');
 
 dotenv.config();
 
 console.log('Environment loaded, PORT:', process.env.PORT);
 
-import { setupSocketHandlers } from './socket/handlers.js';
-import { SupabaseService } from './services/supabase.service.js';
+try {
+  const { setupSocketHandlers } = await import('./socket/handlers.js');
+  const { SupabaseService } = await import('./services/supabase.service.js');
+
+  console.log('Services imported successfully');
+
 
 dotenv.config();
 
@@ -77,11 +83,16 @@ app.get('/api/chats/:userId', async (req: Request, res: Response) => {
 // Setup Socket.IO handlers
 setupSocketHandlers(io);
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+  const PORT = parseInt(process.env.PORT || '3001', 10);
 
-console.log(`Attempting to start server on port ${PORT}`);
+  console.log(`Attempting to start server on port ${PORT}`);
 
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Socket.IO server ready`);
-});
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Socket.IO server ready`);
+  });
+} catch (error) {
+  console.error('=== FATAL ERROR ===');
+  console.error(error);
+  process.exit(1);
+}
