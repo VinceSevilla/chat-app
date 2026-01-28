@@ -77,7 +77,7 @@ app.get('/api/chats/:userId', async (req: Request, res: Response) => {
 // Setup Socket.IO handlers
 setupSocketHandlers(io);
 
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 console.log(`Attempting to start server on port ${PORT}`);
 
