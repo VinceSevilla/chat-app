@@ -8,6 +8,12 @@ import { SupabaseService } from './services/supabase.service.js';
 
 dotenv.config();
 
+console.log('=== SERVER INITIALIZATION START ===');
+console.log('Environment variables check:');
+console.log('VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING');
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING');
+console.log('PORT:', process.env.PORT || 'DEFAULT (3001)');
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -51,7 +57,15 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Handle preflight
 app.use(express.json());
 
-const supabaseService = new SupabaseService();
+let supabaseService: SupabaseService;
+
+try {
+  supabaseService = new SupabaseService();
+  console.log('SupabaseService initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize SupabaseService:', error);
+  // Continue anyway - health endpoint will still work
+}
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -61,6 +75,9 @@ app.get('/health', (req: Request, res: Response) => {
 // Get all users endpoint
 app.get('/api/users', async (req: Request, res: Response) => {
   try {
+    if (!supabaseService) {
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
     const users = await supabaseService.getAllUsers();
     res.json(users);
   } catch (error) {
@@ -72,6 +89,9 @@ app.get('/api/users', async (req: Request, res: Response) => {
 // Get user's chats endpoint
 app.get('/api/chats/:userId', async (req: Request, res: Response) => {
   try {
+    if (!supabaseService) {
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
     const { userId } = req.params;
     const chats = await supabaseService.getUserChats(userId);
     
@@ -100,4 +120,5 @@ setupSocketHandlers(io);
   httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Socket.IO server ready`);
+    console.log('=== SERVER INITIALIZATION COMPLETE ===');
   });
