@@ -27,7 +27,7 @@ function App() {
 
   // Handle dark mode toggle
   const handleDarkModeToggle = () => {
-    setDarkMode(prev => !prev);
+    setDarkMode((prev: boolean) => !prev);
   };
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore, useChatStore } from '../../store';
 import { formatMessageTime } from '../../utils/date';
-import { Message } from '../../types';
+import type { Message } from '../../types';
 
 export const ChatPanel: React.FC = () => {
   const { user } = useAuthStore();
@@ -21,7 +21,7 @@ export const ChatPanel: React.FC = () => {
   } = useChatStore();
 
   const [messageInput, setMessageInput] = useState('');
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [typingTimeout, setTypingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSummary, setShowSummary] = useState(false);

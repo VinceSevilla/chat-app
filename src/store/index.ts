@@ -34,6 +34,8 @@ interface ChatState {
   startTyping: (chatId: string) => void;
   stopTyping: (chatId: string) => void;
   markMessageAsRead: (chatId: string, messageId: string) => void;
+  markMessageDelivered: (chatId: string, messageId: string) => void;
+  markMessagesAsSeen: (chatId: string, messageIds: string[]) => void;
   searchMessages: (query: string) => void;
   requestChatSummary: (chatId: string) => void;
   updateUserStatus: (userId: string, online: boolean) => void;
@@ -251,11 +253,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           if (msg.id === data.messageId) {
             const deliveredTo = (msg as any).delivered_to || [];
             if (!deliveredTo.includes(data.userId)) {
-              return { ...msg, delivered_to: [...deliveredTo, data.userId], status: 'delivered' };
+              return { ...msg, delivered_to: [...deliveredTo, data.userId], status: 'delivered' as const };
             }
           }
           return msg;
-        });
+        }) as Message[];
         
         set({ messages: { ...messages, [chatId]: chatMessages } });
       });
@@ -270,11 +272,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           if (data.messageIds.includes(msg.id)) {
             const readBy = msg.read_by || [];
             if (!readBy.includes(data.userId)) {
-              return { ...msg, read_by: [...readBy, data.userId], status: 'seen' };
+              return { ...msg, read_by: [...readBy, data.userId], status: 'seen' as const };
             }
           }
           return msg;
-        });
+        }) as Message[];
         
         set({ messages: { ...messages, [chatId]: chatMessages } });
       });
