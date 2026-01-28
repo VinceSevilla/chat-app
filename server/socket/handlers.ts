@@ -4,8 +4,22 @@ import { SupabaseService } from '../services/supabase.service.js';
 import { ModerationService } from '../services/moderation.service.js';
 import { MessageData, TypingData, ReadReceiptData } from '../types/index.js';
 
-const supabaseService = new SupabaseService();
-const moderationService = new ModerationService();
+let supabaseService: SupabaseService;
+let moderationService: ModerationService;
+
+try {
+  supabaseService = new SupabaseService();
+  console.log('SupabaseService initialized in socket handlers');
+} catch (error) {
+  console.error('Failed to initialize SupabaseService in socket handlers:', error);
+}
+
+try {
+  moderationService = new ModerationService();
+  console.log('ModerationService initialized in socket handlers');
+} catch (error) {
+  console.error('Failed to initialize ModerationService in socket handlers:', error);
+}
 
 // Track online users
 const onlineUsers = new Map<string, string>(); // userId -> socketId
