@@ -338,7 +338,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const userId = useAuthStore.getState().user?.id;
       if (!userId) return;
 
-      const response = await fetch(`http://localhost:3001/api/chats/${userId}`);
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/chats/${userId}`);
       const chats = await response.json();
       
       set({ chats, loading: false });
@@ -349,7 +350,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   fetchUsers: async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/users');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/users`);
       const users = await response.json();
       set({ users });
     } catch (error: any) {
