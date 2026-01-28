@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { huggingFaceService } from './huggingface.service';
+import { huggingFaceService } from './huggingface.service.js';
 
 dotenv.config();
 

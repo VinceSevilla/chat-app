@@ -1,8 +1,8 @@
 import { Server, Socket } from 'socket.io';
-import { supabase } from '../services/supabase.service';
-import { SupabaseService } from '../services/supabase.service';
-import { ModerationService } from '../services/moderation.service';
-import { MessageData, TypingData, ReadReceiptData } from '../types';
+import { supabase } from '../services/supabase.service.js';
+import { SupabaseService } from '../services/supabase.service.js';
+import { ModerationService } from '../services/moderation.service.js';
+import { MessageData, TypingData, ReadReceiptData } from '../types/index.js';
 
 const supabaseService = new SupabaseService();
 const moderationService = new ModerationService();

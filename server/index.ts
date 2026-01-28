@@ -3,8 +3,8 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { setupSocketHandlers } from './socket/handlers';
-import { SupabaseService } from './services/supabase.service';
+import { setupSocketHandlers } from './socket/handlers.js';
+import { SupabaseService } from './services/supabase.service.js';
 
 dotenv.config();
 

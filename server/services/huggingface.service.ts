@@ -103,8 +103,8 @@ export class HuggingFaceService {
       });
 
       return {
-        label: result.labels?.[0] || 'unknown',
-        score: result.scores?.[0] || 0,
+        label: (result as any).classification?.[0]?.labels || 'unknown',
+        score: (result as any).classification?.[0]?.scores || 0,
       };
     } catch (error: any) {
       console.error('Classification error:', error?.message || error);
