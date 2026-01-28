@@ -24,7 +24,9 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173']).map(origin => origin.trim());
+
+console.log('Allowed origins:', allowedOrigins);
 
 const io = new Server(httpServer, {
   cors: {
