@@ -3,6 +3,13 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+console.log('=== SERVER STARTING ===');
+
+dotenv.config();
+
+console.log('Environment loaded, PORT:', process.env.PORT);
+
 import { setupSocketHandlers } from './socket/handlers.js';
 import { SupabaseService } from './services/supabase.service.js';
 
@@ -72,7 +79,9 @@ setupSocketHandlers(io);
 
 const PORT = process.env.PORT || 3001;
 
-httpServer.listen(PORT, () => {
+console.log(`Attempting to start server on port ${PORT}`);
+
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Socket.IO server ready`);
 });
