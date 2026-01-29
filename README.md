@@ -1,73 +1,111 @@
-# React + TypeScript + Vite
+# Chat App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, full-stack chat application built with React, TypeScript, and Express. Features real-time messaging, AI-powered content moderation, and user authentication.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Real-time Chat**: Socket.io powered instant messaging
+- **User Authentication**: Secure sign-up and login with JWT
+- **AI Moderation**: Content safety checks using Hugging Face API
+- **AI Integration**: OpenAI chat capabilities
+- **User Profiles**: Manage user information and authentication
+- **Type-Safe**: Full TypeScript implementation across frontend and backend
+- **Responsive Design**: Tailwind CSS for modern UI
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+**Frontend:**
+- React 19
+- TypeScript
+- Vite
+- Zustand (state management)
+- Socket.io Client
+- Tailwind CSS
 
-## Expanding the ESLint configuration
+**Backend:**
+- Express.js
+- Socket.io
+- Supabase (database)
+- JWT (authentication)
+- Hugging Face API
+- OpenAI API
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Node.js (v18 or higher)
+- npm or yarn
+- Environment variables configured (see `.env`)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+Start both frontend and backend in development mode:
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Or run them separately:
+- Frontend: `npm run dev:frontend` (Vite dev server)
+- Backend: `npm run dev:backend` (Express with auto-reload)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+This compiles TypeScript and builds the frontend with Vite.
+
+### Production
+
+Build the project and start the server:
+```bash
+npm run build
+npm start
+```
+
+## Project Structure
+
+```
+├── src/                    # Frontend (React)
+│   ├── components/        # React components
+│   ├── services/          # API and socket services
+│   ├── store/             # Zustand state
+│   └── types/             # TypeScript types
+├── server/                # Backend (Express)
+│   ├── services/          # Business logic
+│   ├── socket/            # Socket.io handlers
+│   └── types/             # Shared types
+└── public/                # Static assets
+```
+
+## Scripts
+
+- `npm run dev` - Start development server (frontend + backend)
+- `npm run dev:frontend` - Start frontend dev server only
+- `npm run dev:backend` - Start backend dev server with auto-reload
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Environment Variables
+
+Create a `.env` file in the project root with the necessary configuration variables for:
+- Supabase credentials
+- OpenAI API key
+- Hugging Face API key
+- JWT secret
+- Server port
+
+## License
+
+Proprietary
