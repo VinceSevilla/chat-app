@@ -56,25 +56,79 @@ function App() {
 
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-primary-500 to-primary-700">
-        <div className="text-center text-white max-w-md mx-4">
-          <h1 className="text-5xl font-bold mb-4">ChatApp</h1>
-          <p className="text-xl mb-8 text-primary-100">
-            Real-time messaging with AI-powered moderation
-          </p>
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => setShowLogin(true)}
-              className="px-8 py-3 bg-white text-primary-600 rounded-lg hover:bg-primary-50 transition-colors font-semibold shadow-lg"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => setShowSignup(true)}
-              className="px-8 py-3 bg-primary-800 text-white rounded-lg hover:bg-primary-900 transition-colors font-semibold shadow-lg"
-            >
-              Sign Up
-            </button>
+      <div className="h-screen flex bg-gray-50">
+        {/* Left Side - Content */}
+        <div className="flex-1 flex items-center justify-center px-8 lg:px-16">
+          <div className="max-w-xl w-full">
+            <h1 className="text-6xl font-bold text-gray-900 mb-6">ChatApp</h1>
+            <p className="text-xl text-gray-700 mb-4 font-medium">
+              Real-time messaging with AI-powered moderation
+            </p>
+            <p className="text-base text-gray-600 mb-8 leading-relaxed">
+              Connect with your team instantly. Our platform features intelligent content moderation, 
+              real-time notifications, and seamless collaboration tools to keep your conversations 
+              productive and safe.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowLogin(true)}
+                className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold shadow-lg"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setShowSignup(true)}
+                className="px-8 py-3 bg-white border-2 border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors font-semibold shadow-lg"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side - Vector Designs */}
+        <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary-500 to-primary-700 items-center justify-center p-16">
+          <div className="text-center">
+            <div className="mb-8">
+              {/* Chat bubbles illustration */}
+              <div className="relative w-96 h-96">
+                {/* Main chat bubble */}
+                <div className="absolute top-1/4 left-1/4 w-48 h-32 bg-white rounded-3xl shadow-2xl p-4 transform -rotate-6">
+                  <div className="w-12 h-12 bg-primary-100 rounded-full mb-2"></div>
+                  <div className="w-32 h-3 bg-gray-200 rounded-full mb-2"></div>
+                  <div className="w-24 h-3 bg-gray-200 rounded-full"></div>
+                </div>
+                
+                {/* Secondary chat bubble */}
+                <div className="absolute top-1/2 right-1/4 w-40 h-28 bg-primary-400 rounded-3xl shadow-2xl p-4 transform rotate-6">
+                  <div className="w-28 h-3 bg-white/80 rounded-full mb-2"></div>
+                  <div className="w-20 h-3 bg-white/80 rounded-full mb-2"></div>
+                  <div className="w-24 h-3 bg-white/80 rounded-full"></div>
+                </div>
+
+                {/* Small accent bubble */}
+                <div className="absolute bottom-1/4 left-1/3 w-32 h-24 bg-white/90 rounded-3xl shadow-xl p-3 transform rotate-3">
+                  <div className="w-8 h-8 bg-primary-200 rounded-full mb-2"></div>
+                  <div className="w-20 h-2 bg-gray-200 rounded-full mb-1"></div>
+                  <div className="w-16 h-2 bg-gray-200 rounded-full"></div>
+                </div>
+
+                {/* Floating icons */}
+                <div className="absolute top-8 right-8 w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center animate-bounce">
+                  <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+
+                <div className="absolute bottom-8 left-8 w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center animate-pulse">
+                  <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">Connect & Collaborate</h2>
+            <p className="text-lg text-primary-100">Modern messaging for modern teams</p>
           </div>
         </div>
 
