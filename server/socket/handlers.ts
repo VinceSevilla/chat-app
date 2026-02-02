@@ -34,26 +34,16 @@ export const setupSocketHandlers = (io: Server) => {
         return next(new Error('Authentication error'));
       }
 
-      // Verify Supabase JWT token using admin client
-      const { data, error } = await supabase.auth.admin.getUserById(token);
+      // Verify JWT token using service role client
+      const { data: { user }, error } = await supabase.auth.getUser(token);
       
-      if (error) {
-        console.error('Socket auth failed - getUserById error:', error);
-        // Fallback to getUser if admin method fails
-        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-        if (userError || !user) {
-          console.error('Socket auth failed - getUser error:', userError);
-          return next(new Error('Authentication error'));
-        }
-        socket.data.userId = user.id;
-      } else if (data?.user) {
-        socket.data.userId = data.user.id;
-      } else {
-        console.error('Socket auth failed: No user found');
+      if (error || !user) {
+        console.error('Socket auth failed:', error?.message || 'No user found');
         return next(new Error('Authentication error'));
       }
-      
-      console.log(`Socket authenticated for user: ${socket.data.userId}`);
+
+      socket.data.userId = user.id;
+      console.log(`Socket authenticated for user: ${user.id}`);
       next();
     } catch (err) {
       console.error('Socket auth exception:', err);
