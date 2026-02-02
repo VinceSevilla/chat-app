@@ -136,8 +136,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await authService.signOut();
     } catch (error: any) {
-      set({ error: error.message });
-      throw error;
+      // Ignore session missing errors
+      if (error.message !== 'Auth session missing!') {
+        set({ error: error.message });
+        throw error;
+      }
     }
   },
 }));

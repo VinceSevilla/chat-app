@@ -48,8 +48,17 @@ export const authService = {
   },
 
   async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error && error.message !== 'Auth session missing!') {
+        throw error;
+      }
+    } catch (err: any) {
+      // Ignore session missing errors (user already logged out)
+      if (err.message !== 'Auth session missing!') {
+        throw err;
+      }
+    }
   },
 
   async getCurrentUser() {
