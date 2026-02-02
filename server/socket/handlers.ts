@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase.service.js';
 import { SupabaseService } from '../services/supabase.service.js';
 import { ModerationService } from '../services/moderation.service.js';
 import { MessageData, TypingData, ReadReceiptData } from '../types/index.js';
+import jwt from 'jsonwebtoken';
 
 let supabaseService: SupabaseService;
 let moderationService: ModerationService;
@@ -34,16 +35,28 @@ export const setupSocketHandlers = (io: Server) => {
         return next(new Error('Authentication error'));
       }
 
-      // Verify JWT token using service role client
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      // Decode JWT token to extract user ID
+      const decoded = jwt.decode(token) as any;
       
-      if (error || !user) {
-        console.error('Socket auth failed:', error?.message || 'No user found');
+      if (!decoded || !decoded.sub) {
+        console.error('Socket auth failed: Invalid token');
         return next(new Error('Authentication error'));
       }
 
-      socket.data.userId = user.id;
-      console.log(`Socket authenticated for user: ${user.id}`);
+      // Verify the user exists in database
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', decoded.sub)
+        .single();
+      
+      if (error || !user) {
+        console.error('Socket auth failed: User not found');
+        return next(new Error('Authentication error'));
+      }
+
+      socket.data.userId = decoded.sub;
+      console.log(`Socket authenticated for user: ${decoded.sub}`);
       next();
     } catch (err) {
       console.error('Socket auth exception:', err);
