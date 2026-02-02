@@ -134,13 +134,23 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     try {
+      // Always disconnect socket and clear state first
+      socketService.disconnect();
+      
+      // Then attempt Supabase sign out
       await authService.signOut();
+      
+      // Clear local state
+      set({ user: null, session: null });
+      useChatStore.setState({ chats: [], currentChatId: null, messages: {}, hiddenChatIds: [] });
     } catch (error: any) {
-      // Ignore session missing errors
-      if (error.message !== 'Auth session missing!') {
-        set({ error: error.message });
-        throw error;
-      }
+      // Even if Supabase signOut fails, we've already cleaned up locally
+      console.error('Sign out error:', error);
+      
+      // Ensure state is cleared
+      socketService.disconnect();
+      set({ user: null, session: null });
+      useChatStore.setState({ chats: [], currentChatId: null, messages: {}, hiddenChatIds: [] });
     }
   },
 }));
