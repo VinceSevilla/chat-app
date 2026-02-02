@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuthStore } from './store';
+import { useAuthStore, useChatStore } from './store';
 import { LoginModal } from './components/auth/LoginModal';
 import { SignupModal } from './components/auth/SignupModal';
 import { Sidebar } from './components/chat/Sidebar';
@@ -7,8 +7,10 @@ import { ChatPanel } from './components/chat/ChatPanel';
 
 function App() {
   const { user, loading, initAuth } = useAuthStore();
+  const { currentChatId } = useChatStore();
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
   const [darkMode, setDarkMode] = useState(() => {
     // Check if user has saved preference
     const saved = localStorage.getItem('darkMode');
@@ -24,6 +26,14 @@ function App() {
   useEffect(() => {
     initAuth();
   }, []);
+
+  useEffect(() => {
+    if (currentChatId) {
+      setMobileView('chat');
+    } else {
+      setMobileView('list');
+    }
+  }, [currentChatId]);
 
   // Handle dark mode toggle
   const handleDarkModeToggle = () => {
@@ -56,29 +66,29 @@ function App() {
 
   if (!user) {
     return (
-      <div className="h-screen flex bg-gray-50">
+      <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
         {/* Left Side - Content */}
-        <div className="flex-1 flex items-center justify-center px-8 lg:px-16">
+        <div className="flex-1 flex items-center justify-center px-6 sm:px-8 lg:px-16 py-12">
           <div className="max-w-xl w-full">
-            <h1 className="text-6xl font-bold text-gray-900 mb-6">ChatApp</h1>
-            <p className="text-xl text-gray-700 mb-4 font-medium">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">ChatApp</h1>
+            <p className="text-lg sm:text-xl text-gray-700 mb-4 font-medium">
               Real-time messaging with AI-powered moderation
             </p>
-            <p className="text-base text-gray-600 mb-8 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-600 mb-8 leading-relaxed">
               Connect with your team instantly. Our platform features intelligent content moderation, 
               real-time notifications, and seamless collaboration tools to keep your conversations 
               productive and safe.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => setShowLogin(true)}
-                className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold shadow-lg"
+                className="w-full sm:w-auto px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold shadow-lg"
               >
                 Sign In
               </button>
               <button
                 onClick={() => setShowSignup(true)}
-                className="px-8 py-3 bg-white border-2 border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors font-semibold shadow-lg"
+                className="w-full sm:w-auto px-8 py-3 bg-white border-2 border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors font-semibold shadow-lg"
               >
                 Sign Up
               </button>
@@ -154,9 +164,20 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex bg-gray-100 dark:bg-gray-900">
-      <Sidebar darkMode={darkMode} onToggleDarkMode={handleDarkModeToggle} />
-      <ChatPanel />
+    <div className="min-h-screen md:h-screen flex flex-col md:flex-row bg-gray-100 dark:bg-gray-900">
+      <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} flex-1 md:flex md:flex-none md:w-80`}>
+        <Sidebar
+          darkMode={darkMode}
+          onToggleDarkMode={handleDarkModeToggle}
+          onSelectChat={() => setMobileView('chat')}
+        />
+      </div>
+      <div className={`flex-1 ${mobileView === 'chat' ? 'flex' : 'hidden'} md:flex`}>
+        <ChatPanel
+          showBackButton={mobileView === 'chat'}
+          onBack={() => setMobileView('list')}
+        />
+      </div>
     </div>
   );
 }

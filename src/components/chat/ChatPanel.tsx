@@ -3,7 +3,12 @@ import { useAuthStore, useChatStore } from '../../store';
 import { formatMessageTime } from '../../utils/date';
 import type { Message } from '../../types';
 
-export const ChatPanel: React.FC = () => {
+interface ChatPanelProps {
+  showBackButton?: boolean;
+  onBack?: () => void;
+}
+
+export const ChatPanel: React.FC<ChatPanelProps> = ({ showBackButton = false, onBack }) => {
   const { user } = useAuthStore();
   const {
     chats,
@@ -238,10 +243,21 @@ export const ChatPanel: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white dark:bg-gray-800">
+    <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-gray-800">
       {/* Chat Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {showBackButton && (
+            <button
+              onClick={onBack}
+              className="md:hidden p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="Back to chats"
+            >
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
           <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 flex items-center justify-center font-semibold">
             {getChatName()[0]?.toUpperCase()}
           </div>
@@ -417,7 +433,7 @@ export const ChatPanel: React.FC = () => {
                   <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-semibold text-xs flex-shrink-0">
                     {getInitials(sender?.full_name || 'U')}
                   </div>
-                  <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-md`}>
+                  <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[80%] sm:max-w-md`}>
                     {!isOwn && (
                       <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 px-3">
                         {sender?.full_name}

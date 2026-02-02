@@ -7,11 +7,12 @@ import { UserProfileModal } from '../user/UserProfileModal';
 interface SidebarProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  onSelectChat?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ darkMode, onToggleDarkMode }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ darkMode, onToggleDarkMode, onSelectChat }) => {
   const { user, signOut } = useAuthStore();
-  const { chats, currentChatId, setCurrentChat, fetchChats, fetchUsers, users, createChat } = useChatStore();
+  const { chats, currentChatId, setCurrentChat, fetchChats, fetchUsers, users, createChat, deleteChat, hiddenChatIds } = useChatStore();
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -52,10 +53,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ darkMode, onToggleDarkMode }) 
   };
 
   const filteredChats = chats.filter(chat => {
+    if (hiddenChatIds.includes(chat.id)) return false;
     if (!searchQuery) return true;
     const chatName = getChatName(chat);
     return chatName.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  }).sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
   const isOnline = (chat: Chat): boolean => {
     if (!chat.is_group && chat.members) {
@@ -66,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ darkMode, onToggleDarkMode }) 
   };
 
   return (
-    <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-screen">
+    <div className="w-full md:w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-screen md:h-screen min-h-0">
       {/* User Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-primary-600 dark:bg-primary-700">
         <div className="flex items-center justify-between">
@@ -161,7 +163,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ darkMode, onToggleDarkMode }) 
         {filteredChats.map((chat) => (
           <button
             key={chat.id}
-            onClick={() => setCurrentChat(chat.id)}
+            onClick={() => {
+              setCurrentChat(chat.id);
+              onSelectChat?.();
+            }}
             className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 min-h-20 ${
               currentChatId === chat.id ? 'bg-primary-50 dark:bg-primary-900/30' : ''
             }`}
@@ -177,9 +182,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ darkMode, onToggleDarkMode }) 
             <div className="flex-1 min-w-0 text-left">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <h4 className="font-semibold text-gray-900 dark:text-white truncate">{getChatName(chat)}</h4>
-                <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                  {formatDistanceToNow(chat.updated_at)}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatDistanceToNow(chat.updated_at)}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const ok = window.confirm('Delete this conversation from your list?');
+                      if (ok) {
+                        deleteChat(chat.id);
+                      }
+                    }}
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Delete conversation"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                 {chat.is_group ? `${chat.members?.length || 0} members` : 'Direct message'}

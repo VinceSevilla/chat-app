@@ -113,6 +113,17 @@ export class SupabaseService {
     return data;
   }
 
+  async removeChatMember(chatId: string, userId: string) {
+    const { error } = await supabase
+      .from('chat_members')
+      .delete()
+      .eq('chat_id', chatId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return true;
+  }
+
   async getOrCreateDirectChat(user1Id: string, user2Id: string) {
     // Check if a direct chat already exists between these users
     const { data: existingChats, error: fetchError } = await supabase

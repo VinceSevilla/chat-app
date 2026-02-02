@@ -320,6 +320,19 @@ export const setupSocketHandlers = (io: Server) => {
       }
     });
 
+    // Handle deleting chat for current user (leave chat)
+    socket.on('chat:leave', async (data: { chatId: string }, callback?: (response: { ok: boolean; error?: string }) => void) => {
+      try {
+        const { chatId } = data;
+        await supabaseService.removeChatMember(chatId, userId);
+        socket.leave(`chat:${chatId}`);
+        callback?.({ ok: true });
+      } catch (error) {
+        console.error('Error leaving chat:', error);
+        callback?.({ ok: false, error: 'Failed to delete chat' });
+      }
+    });
+
     // Handle disconnect
     socket.on('disconnect', async () => {
       console.log(`User disconnected: ${userId}`);

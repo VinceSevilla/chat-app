@@ -131,6 +131,7 @@ class SocketService {
     this.socket?.on('chat:error', callback);
   }
 
+
   // User presence
   onUserStatus(callback: (data: { userId: string; online: boolean }) => void) {
     this.socket?.on('user:status', callback);

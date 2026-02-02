@@ -26,6 +26,9 @@ interface ChatState {
   searchResults: Message[];
   chatSummary: string | null;
   summaryError: string | null;
+  hiddenChatIds: string[];
+  unhideChat: (chatId: string) => void;
+  hideChat: (chatId: string) => void;
   setCurrentChat: (chatId: string | null) => void;
   fetchChats: () => Promise<void>;
   fetchUsers: () => Promise<void>;
@@ -38,6 +41,7 @@ interface ChatState {
   markMessagesAsSeen: (chatId: string, messageIds: string[]) => void;
   searchMessages: (query: string) => void;
   requestChatSummary: (chatId: string) => void;
+  deleteChat: (chatId: string) => Promise<void>;
   updateUserStatus: (userId: string, online: boolean) => void;
   setupSocketListeners: () => void;
 }
@@ -149,17 +153,45 @@ export const useChatStore = create<ChatState>((set, get) => ({
   searchResults: [],
   chatSummary: null,
   summaryError: null,
+  hiddenChatIds: JSON.parse(localStorage.getItem('hiddenChatIds') || '[]'),
+
+  hideChat: (chatId: string) => {
+    const { hiddenChatIds } = get();
+    const updatedHidden = Array.from(new Set([...hiddenChatIds, chatId]));
+    localStorage.setItem('hiddenChatIds', JSON.stringify(updatedHidden));
+    set({ hiddenChatIds: updatedHidden });
+  },
+
+  unhideChat: (chatId: string) => {
+    const { hiddenChatIds } = get();
+    if (!hiddenChatIds.includes(chatId)) return;
+    const updatedHidden = hiddenChatIds.filter(id => id !== chatId);
+    localStorage.setItem('hiddenChatIds', JSON.stringify(updatedHidden));
+    set({ hiddenChatIds: updatedHidden });
+  },
 
   setupSocketListeners: () => {
     // New message
     socketService.onNewMessage((message: Message) => {
-      const { messages, currentChatId } = get();
+      const { messages, currentChatId, chats } = get();
+      get().unhideChat(message.chat_id);
+
       const chatMessages = messages[message.chat_id] || [];
       
       // Remove temp message if exists
       const filteredMessages = chatMessages.filter((m: Message) => m.tempId !== message.tempId);
+
+      const updatedChats = chats.map((chat: Chat) =>
+        chat.id === message.chat_id
+          ? { ...chat, updated_at: message.created_at }
+          : chat
+      );
+      updatedChats.sort((a: Chat, b: Chat) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
       
       set({
+        chats: updatedChats,
         messages: {
           ...messages,
           [message.chat_id]: [...filteredMessages, message],
@@ -285,18 +317,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // New chat
     socketService.onNewChat((chat: Chat) => {
       const { chats } = get();
+      get().unhideChat(chat.id);
       // Check if chat already exists
       if (!chats.some(c => c.id === chat.id)) {
-        set({ chats: [...chats, chat] });
+        const updatedChats = [...chats, chat].sort((a: Chat, b: Chat) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+        set({ chats: updatedChats });
         socketService.fetchMessages(chat.id);
       }
     });
 
     socketService.onChatCreated((chat: Chat) => {
       const { chats } = get();
+      get().unhideChat(chat.id);
       // Check if chat already exists
       if (!chats.some(c => c.id === chat.id)) {
-        set({ chats: [...chats, chat], currentChatId: chat.id });
+        const updatedChats = [...chats, chat].sort((a: Chat, b: Chat) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+        set({ chats: updatedChats, currentChatId: chat.id });
         socketService.fetchMessages(chat.id);
       } else {
         // Just set it as current if it exists
@@ -326,6 +366,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setCurrentChat: (chatId: string | null) => {
+    if (chatId) {
+      get().unhideChat(chatId);
+    }
     set({ currentChatId: chatId });
     if (chatId) {
       socketService.fetchMessages(chatId);
@@ -341,8 +384,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${apiUrl}/api/chats/${userId}`);
       const chats = await response.json();
+      const sortedChats = chats.sort((a: Chat, b: Chat) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
       
-      set({ chats, loading: false });
+      set({ chats: sortedChats, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -421,6 +467,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   requestChatSummary: (chatId: string) => {
     set({ chatSummary: null });
     socketService.requestChatSummary(chatId);
+  },
+
+  deleteChat: async (chatId: string) => {
+    const { messages, currentChatId } = get();
+    get().hideChat(chatId);
+
+    const { [chatId]: _removed, ...remainingMessages } = messages;
+    set({
+      messages: remainingMessages,
+      currentChatId: currentChatId === chatId ? null : currentChatId,
+    });
   },
 
   updateUserStatus: (userId: string, online: boolean) => {
